@@ -36,7 +36,7 @@ async function runPrompt(): Promise<void> {
     await Deno.stdout.write(new TextEncoder().encode('> '));
     const { value } = await lines.next();
 
-    if (value === undefined || value === 'q') break;
+    if (value == null || value === 'q') break;
 
     run(value);
     denoLoxError.hadError = false;
