@@ -2,8 +2,9 @@ import { parse } from 'https://deno.land/std@v0.61.0/flags/mod.ts';
 import { exists, readFileStr } from 'https://deno.land/std@v0.61.0/fs/mod.ts';
 import { readLines } from 'https://deno.land/std@v0.61.0/io/mod.ts';
 import Scanner from './Scanner.ts';
+import DenoLoxError from './Error.ts';
 
-let hadError = false;
+let denoLoxError = new DenoLoxError();
 
 async function main(): Promise<void> {
   const args = parse(Deno.args, { string: 'f' });
@@ -26,7 +27,7 @@ async function runFile(path: string): Promise<void> {
   console.log(result);
   run(result);
 
-  if (hadError) Deno.exit(65);
+  if (denoLoxError.hadError) Deno.exit(65);
 }
 
 async function runPrompt(): Promise<void> {
@@ -38,26 +39,17 @@ async function runPrompt(): Promise<void> {
     if (value === undefined || value === 'q') break;
 
     run(value);
-    hadError = false;
+    denoLoxError.hadError = false;
   }
 }
 
 function run(source: string): void {
-  const scanner = new Scanner(source);
+  const scanner = new Scanner(source, denoLoxError);
   const tokens = scanner.scanTokens();
 
   for (const token of tokens) {
     console.log(token);
   }
-}
-
-function error(line: number, message: string): void {
-  report(line, '', message);
-}
-
-function report(line: number, where: string, message: string): void {
-  console.log(`[line ${line}] Error${where}: ${message}`);
-  hadError = true;
 }
 
 await main();
