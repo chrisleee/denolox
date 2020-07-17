@@ -10,7 +10,7 @@ export enum TokenType {
   PLUS,
   SEMICOLON,
   SLASH,
-  START,
+  STAR,
 
   // One or two character tokens.
   BANG,

@@ -1,10 +1,10 @@
 import { TokenType } from './TokenType.ts';
 
 export default class Token {
-  private type: TokenType;
-  private lexeme: string;
-  private literal: any;
-  private line: number;
+  public type: TokenType;
+  public lexeme: string;
+  public literal: any;
+  public line: number;
 
   constructor(type: TokenType, lexeme: string, literal: any, line: number) {
     this.type = type;

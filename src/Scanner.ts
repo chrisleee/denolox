@@ -75,7 +75,7 @@ export default class Scanner {
         this.addToken(TokenType.SEMICOLON);
         break;
       case '*':
-        this.addToken(TokenType.START);
+        this.addToken(TokenType.STAR);
         break;
 
       case '!':
