@@ -3,14 +3,16 @@ import { exists, readFileStr } from 'https://deno.land/std@v0.61.0/fs/mod.ts';
 import { readLines } from 'https://deno.land/std@v0.61.0/io/mod.ts';
 import Scanner from './Scanner.ts';
 import DenoLoxError from './Error.ts';
+import { Parser } from './Parser.ts';
+import { AstPrinter } from './AstPrinter.ts';
 
 let denoLoxError = new DenoLoxError();
+const encoder = new TextEncoder();
 
 async function main(): Promise<void> {
   const args = parse(Deno.args, { string: 'f' });
-  console.log(args);
   if (args._.length > 0) {
-    console.log('Usage: denolox -f [script]');
+    await Deno.stdout.write(encoder.encode('Usage: denolox -f [script]'));
   } else if (args.f !== undefined) {
     await runFile(args.f);
   } else {
@@ -20,12 +22,11 @@ async function main(): Promise<void> {
 
 async function runFile(path: string): Promise<void> {
   if (!(await exists(path))) {
-    console.log('Path does not exist');
+    await Deno.stdout.write(encoder.encode('Path does not exist'));
     return;
   }
   const result = await readFileStr(path);
-  console.log(result);
-  run(result);
+  await run(result);
 
   if (denoLoxError.hadError) Deno.exit(65);
 }
@@ -33,23 +34,25 @@ async function runFile(path: string): Promise<void> {
 async function runPrompt(): Promise<void> {
   const lines = readLines(Deno.stdin);
   while (true) {
-    await Deno.stdout.write(new TextEncoder().encode('> '));
+    await Deno.stdout.write(encoder.encode('\n> '));
     const { value } = await lines.next();
 
     if (value == null || value === 'q') break;
 
-    run(value);
+    await run(value);
     denoLoxError.hadError = false;
   }
 }
 
-function run(source: string): void {
+async function run(source: string): Promise<void> {
   const scanner = new Scanner(source, denoLoxError);
   const tokens = scanner.scanTokens();
+  const parser = new Parser(tokens);
+  const expression = parser.parse();
 
-  for (const token of tokens) {
-    console.log(token);
-  }
+  if (denoLoxError.hadError) return;
+
+  await Deno.stdout.write(encoder.encode(new AstPrinter().print(expression)));
 }
 
 await main();

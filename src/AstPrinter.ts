@@ -1,10 +1,9 @@
 import { StringWriter } from 'https://deno.land/std@v0.61.0/io/mod.ts';
 import { Binary, Expr, Grouping, Literal, Unary, Visitor } from './Expr.ts';
-import Token from './Token.ts';
-import { TokenType } from './TokenType.ts';
 
 export class AstPrinter implements Visitor<String> {
-  print(expr: Expr): string {
+  print(expr: Expr | null): string {
+    if (!expr) return 'fail\n';
     return expr.accept(this);
   }
 
@@ -17,7 +16,7 @@ export class AstPrinter implements Visitor<String> {
   }
 
   public visitLiteralExpr(expr: Literal): string {
-    if (!expr.value) return 'nil';
+    if (!expr.value) return 'nil\n';
     return expr.value.toString();
   }
 
@@ -40,14 +39,14 @@ export class AstPrinter implements Visitor<String> {
 }
 
 // Temporary function to test out functionality
-function main(): void {
-  const expression = new Binary(
-    new Unary(new Token(TokenType.MINUS, '-', null, 1), new Literal(123)),
-    new Token(TokenType.STAR, '*', null, 1),
-    new Grouping(new Literal(45.67)),
-  );
+// function main(): void {
+//   const expression = new Binary(
+//     new Unary(new Token(TokenType.MINUS, '-', null, 1), new Literal(123)),
+//     new Token(TokenType.STAR, '*', null, 1),
+//     new Grouping(new Literal(45.67)),
+//   );
 
-  console.log(new AstPrinter().print(expression));
-}
+//   console.log(new AstPrinter().print(expression));
+// }
 
-main();
+// main();
