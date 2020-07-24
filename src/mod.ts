@@ -5,6 +5,7 @@ import Scanner from './Scanner.ts';
 import DenoLoxError from './Error.ts';
 import { Parser } from './Parser.ts';
 import { AstPrinter } from './AstPrinter.ts';
+import { Interpreter } from './Interpreter.ts';
 
 let denoLoxError = new DenoLoxError();
 const encoder = new TextEncoder();
@@ -29,6 +30,7 @@ async function runFile(path: string): Promise<void> {
   await run(result);
 
   if (denoLoxError.hadError) Deno.exit(65);
+  if (denoLoxError.hadRuntimeError) Deno.exit(70);
 }
 
 async function runPrompt(): Promise<void> {
@@ -47,12 +49,15 @@ async function runPrompt(): Promise<void> {
 async function run(source: string): Promise<void> {
   const scanner = new Scanner(source, denoLoxError);
   const tokens = scanner.scanTokens();
-  const parser = new Parser(tokens);
+  const parser = new Parser(tokens, denoLoxError);
   const expression = parser.parse();
+  if (expression == null) return;
+  const interpreter = new Interpreter(denoLoxError);
 
   if (denoLoxError.hadError) return;
 
-  await Deno.stdout.write(encoder.encode(new AstPrinter().print(expression)));
+  // await Deno.stdout.write(encoder.encode(new AstPrinter().print(expression)));
+  interpreter.interpret(expression);
 }
 
 await main();

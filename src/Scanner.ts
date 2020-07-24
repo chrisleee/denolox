@@ -3,9 +3,9 @@ import Token from './Token.ts';
 import { TokenType } from './TokenType.ts';
 
 export default class Scanner {
-  private source: string;
   private denoLoxError: DenoLoxError;
 
+  private source: string;
   private tokens: Token[] = [];
   private start = 0;
   private current = 0;
@@ -235,7 +235,7 @@ export default class Scanner {
   private addToken(type: TokenType, literal: any): void;
 
   private addToken(type: TokenType, literal?: any): void {
-    if (!literal) literal = null;
+    if (literal == null) literal = null;
     const text = this.source.substring(this.start, this.current);
     this.tokens.push(new Token(type, text, literal, this.line));
   }

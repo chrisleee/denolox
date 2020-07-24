@@ -4,11 +4,13 @@ import DenoLoxError from './Error.ts';
 import { Expr, Binary, Unary, Literal, Grouping } from './Expr.ts';
 
 export class Parser {
-  private tokens: Token[];
+  private denoLoxError: DenoLoxError;
 
+  private tokens: Token[];
   private current = 0;
 
-  constructor(tokens: Token[]) {
+  constructor(tokens: Token[], denoLoxError: DenoLoxError) {
+    this.denoLoxError = denoLoxError;
     this.tokens = tokens;
   }
 
@@ -117,8 +119,7 @@ export class Parser {
       return new Grouping(expr);
     }
 
-    const denoLoxError = new DenoLoxError();
-    denoLoxError.tokenError(this.peek(), 'Expect expression.');
+    this.denoLoxError.tokenError(this.peek(), 'Expect expression.');
     throw new Error();
   }
 
@@ -136,8 +137,7 @@ export class Parser {
   private consume(type: TokenType, message: string): Token {
     if (this.check(type)) return this.advance();
 
-    const denoLoxError = new DenoLoxError();
-    denoLoxError.tokenError(this.peek(), message);
+    this.denoLoxError.tokenError(this.peek(), message);
     throw new Error();
   }
 
