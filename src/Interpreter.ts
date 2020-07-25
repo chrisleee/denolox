@@ -7,6 +7,7 @@ import {
   Unary,
   Visitor as ExprVisitor,
   Variable,
+  Assign,
 } from './Expr.ts';
 import { RuntimeError } from './RuntimeError.ts';
 import { Visitor as StmtVistor, Expression, Stmt, Var } from './Stmt.ts';
@@ -183,5 +184,12 @@ export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
     }
 
     this.environment.define(stmt.name.lexeme, value);
+  }
+
+  public visitAssignExpr(expr: Assign): any {
+    const value = this.evaluate(expr.value);
+
+    this.environment.assign(expr.name, value);
+    return value;
   }
 }

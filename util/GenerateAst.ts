@@ -15,6 +15,7 @@ async function main(): Promise<void> {
   const outputDir = args._[0].toString();
 
   await defineAst(encoder, outputDir, 'Expr', [
+    'Assign   - name: Token, value: Expr',
     'Binary   - left: Expr, operator: Token, right: Expr',
     'Grouping - expression: Expr',
     'Literal  - value: any',

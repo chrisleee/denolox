@@ -1,5 +1,13 @@
 import DenoLoxError from './Error.ts';
-import { Binary, Expr, Grouping, Literal, Unary, Variable } from './Expr.ts';
+import {
+  Binary,
+  Expr,
+  Grouping,
+  Literal,
+  Unary,
+  Variable,
+  Assign,
+} from './Expr.ts';
 import { Stmt, Print, Expression, Var } from './Stmt.ts';
 import Token from './Token.ts';
 import { TokenType } from './TokenType.ts';
@@ -83,7 +91,25 @@ export class Parser {
   }
 
   private expression(): Expr {
-    return this.equality();
+    return this.assignment();
+  }
+
+  private assignment(): Expr {
+    const expr = this.equality();
+
+    if (this.match(TokenType.EQUAL)) {
+      const equals = this.previous();
+      const value = this.assignment();
+
+      if (expr instanceof Variable) {
+        const name = (expr as Variable).name;
+        return new Assign(name, value);
+      }
+
+      this.denoLoxError.error(equals.line, 'Invalid assignment target.');
+    }
+
+    return expr;
   }
 
   private equality(): Expr {
