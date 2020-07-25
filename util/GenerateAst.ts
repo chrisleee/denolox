@@ -13,11 +13,19 @@ async function main(): Promise<void> {
   }
 
   const outputDir = args._[0].toString();
+
   await defineAst(encoder, outputDir, 'Expr', [
     'Binary   - left: Expr, operator: Token, right: Expr',
     'Grouping - expression: Expr',
     'Literal  - value: any',
     'Unary    - operator: Token, right: Expr',
+    'Variable - name: Token',
+  ]);
+
+  await defineAst(encoder, outputDir, 'Stmt', [
+    'Expression - expression: Expr',
+    'Print      - expression: Expr',
+    'Var        - name: Token, initializer: Expr | null',
   ]);
 }
 
@@ -38,6 +46,9 @@ async function defineAst(
 
   // Imports
   await writer.write(encoder.encode("import Token from './Token.ts';\n"));
+  if (baseName !== 'Expr') {
+    await writer.write(encoder.encode("import { Expr } from './Expr.ts';\n"));
+  }
 
   // Abstract class
   await writer.write(encoder.encode('\n'));

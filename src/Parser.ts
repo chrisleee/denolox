@@ -1,7 +1,8 @@
+import DenoLoxError from './Error.ts';
+import { Binary, Expr, Grouping, Literal, Unary, Variable } from './Expr.ts';
+import { Stmt, Print, Expression, Var } from './Stmt.ts';
 import Token from './Token.ts';
 import { TokenType } from './TokenType.ts';
-import DenoLoxError from './Error.ts';
-import { Expr, Binary, Unary, Literal, Grouping } from './Expr.ts';
 
 export class Parser {
   private denoLoxError: DenoLoxError;
@@ -14,12 +15,57 @@ export class Parser {
     this.tokens = tokens;
   }
 
-  public parse(): Expr | null {
+  public parse(): Stmt[] {
+    const statements = [];
+    while (!this.isAtEnd()) {
+      const value = this.declaration();
+      if (value != null) {
+        statements.push(value);
+      }
+    }
+
+    return statements as Stmt[];
+  }
+
+  private declaration(): Stmt | null {
     try {
-      return this.comma();
+      if (this.match(TokenType.VAR)) return this.varDeclaration();
+
+      return this.statement();
     } catch (error) {
+      this.synchronize();
       return null;
     }
+  }
+
+  private varDeclaration(): Stmt {
+    const name = this.consume(TokenType.IDENTIFIER, 'Expect variable name.');
+
+    let initializer = null;
+    if (this.match(TokenType.EQUAL)) {
+      initializer = this.expression();
+    }
+
+    this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration");
+    return new Var(name, initializer);
+  }
+
+  private statement(): Stmt {
+    if (this.match(TokenType.PRINT)) return this.printStatement();
+
+    return this.expressionStatement();
+  }
+
+  private printStatement(): Stmt {
+    const value = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return new Print(value);
+  }
+
+  private expressionStatement(): Stmt {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after expression");
+    return new Expression(expr);
   }
 
   // TODO: Refactor all the Binary operations
@@ -113,13 +159,17 @@ export class Parser {
     if (this.match(TokenType.NUMBER, TokenType.STRING))
       return new Literal(this.previous().literal);
 
+    if (this.match(TokenType.IDENTIFIER)) {
+      return new Variable(this.previous());
+    }
+
     if (this.match(TokenType.LEFT_PAREN)) {
       const expr = this.expression();
       this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
       return new Grouping(expr);
     }
 
-    this.denoLoxError.tokenError(this.peek(), 'Expect expression.');
+    this.denoLoxError.tokenError(this.peek(), 'Expected expression.');
     throw new Error();
   }
 

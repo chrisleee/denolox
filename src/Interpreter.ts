@@ -1,21 +1,34 @@
-import { Literal, Visitor, Grouping, Expr, Unary, Binary } from './Expr.ts';
-import { TokenType } from './TokenType.ts';
-import Token from './Token.ts';
-import { RuntimeError } from './RuntimeError.ts';
 import DenoLoxError from './Error.ts';
+import {
+  Binary,
+  Expr,
+  Grouping,
+  Literal,
+  Unary,
+  Visitor as ExprVisitor,
+  Variable,
+} from './Expr.ts';
+import { RuntimeError } from './RuntimeError.ts';
+import { Visitor as StmtVistor, Expression, Stmt, Var } from './Stmt.ts';
+import Token from './Token.ts';
+import { TokenType } from './TokenType.ts';
+import { Environment } from './Environment.ts';
 
-export class Interpreter implements Visitor<any> {
+export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
   private encoder = new TextEncoder();
   private denoLoxError: DenoLoxError;
+
+  private environment = new Environment();
 
   constructor(denoLoxError: DenoLoxError) {
     this.denoLoxError = denoLoxError;
   }
 
-  public interpret(expression: Expr): void {
+  public interpret(statements: Stmt[]): void {
     try {
-      const value = this.evaluate(expression);
-      Deno.stdout.writeSync(this.encoder.encode(this.stringify(value)));
+      for (const statement of statements) {
+        this.execute(statement);
+      }
     } catch (error) {
       this.denoLoxError.runtimeError(error);
     }
@@ -41,6 +54,10 @@ export class Interpreter implements Visitor<any> {
     }
 
     return null;
+  }
+
+  public visitVariableExpr(expr: Variable): any {
+    return this.environment.get(expr.name);
   }
 
   public visitBinaryExpr(expr: Binary): any {
@@ -144,5 +161,27 @@ export class Interpreter implements Visitor<any> {
 
   private evaluate(expr: Expr): any {
     return expr.accept(this);
+  }
+
+  private execute(stmt: Stmt): void {
+    stmt.accept(this);
+  }
+
+  public visitExpressionStmt(stmt: Expression): void {
+    this.evaluate(stmt.expression);
+  }
+
+  public visitPrintStmt(stmt: Expression): void {
+    const value = this.evaluate(stmt.expression);
+    Deno.stdout.writeSync(this.encoder.encode(this.stringify(value)));
+  }
+
+  public visitVarStmt(stmt: Var): void {
+    let value = null;
+    if (stmt.initializer != null) {
+      value = this.evaluate(stmt.initializer);
+    }
+
+    this.environment.define(stmt.name.lexeme, value);
   }
 }

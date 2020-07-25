@@ -4,7 +4,7 @@ import { readLines } from 'https://deno.land/std@v0.61.0/io/mod.ts';
 import Scanner from './Scanner.ts';
 import DenoLoxError from './Error.ts';
 import { Parser } from './Parser.ts';
-import { AstPrinter } from './AstPrinter.ts';
+// import { AstPrinter } from './AstPrinter.ts';
 import { Interpreter } from './Interpreter.ts';
 
 let denoLoxError = new DenoLoxError();
@@ -50,14 +50,13 @@ async function run(source: string): Promise<void> {
   const scanner = new Scanner(source, denoLoxError);
   const tokens = scanner.scanTokens();
   const parser = new Parser(tokens, denoLoxError);
-  const expression = parser.parse();
-  if (expression == null) return;
+  const statements = parser.parse();
   const interpreter = new Interpreter(denoLoxError);
 
   if (denoLoxError.hadError) return;
 
   // await Deno.stdout.write(encoder.encode(new AstPrinter().print(expression)));
-  interpreter.interpret(expression);
+  interpreter.interpret(statements);
 }
 
 await main();
