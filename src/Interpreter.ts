@@ -10,7 +10,7 @@ import {
   Assign,
 } from './Expr.ts';
 import { RuntimeError } from './RuntimeError.ts';
-import { Visitor as StmtVistor, Expression, Stmt, Var } from './Stmt.ts';
+import { Visitor as StmtVistor, Expression, Stmt, Var, Block } from './Stmt.ts';
 import Token from './Token.ts';
 import { TokenType } from './TokenType.ts';
 import { Environment } from './Environment.ts';
@@ -19,7 +19,7 @@ export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
   private encoder = new TextEncoder();
   private denoLoxError: DenoLoxError;
 
-  private environment = new Environment();
+  private static environment = new Environment();
 
   constructor(denoLoxError: DenoLoxError) {
     this.denoLoxError = denoLoxError;
@@ -58,7 +58,13 @@ export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
   }
 
   public visitVariableExpr(expr: Variable): any {
-    return this.environment.get(expr.name);
+    const value = Interpreter.environment.get(expr.name);
+
+    if (value == null) {
+      throw new RuntimeError(expr.name, 'Variable not initialized.');
+    }
+
+    return value;
   }
 
   public visitBinaryExpr(expr: Binary): any {
@@ -168,13 +174,33 @@ export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
     stmt.accept(this);
   }
 
+  private executeBlock(statements: Stmt[], environment: Environment): void {
+    const previous = Interpreter.environment;
+    try {
+      Interpreter.environment = environment;
+
+      for (const statement of statements) {
+        this.execute(statement);
+      }
+    } finally {
+      Interpreter.environment = previous;
+    }
+  }
+
+  public visitBlockStmt(stmt: Block): void {
+    this.executeBlock(
+      stmt.statements,
+      new Environment(Interpreter.environment),
+    );
+  }
+
   public visitExpressionStmt(stmt: Expression): void {
     this.evaluate(stmt.expression);
   }
 
   public visitPrintStmt(stmt: Expression): void {
     const value = this.evaluate(stmt.expression);
-    Deno.stdout.writeSync(this.encoder.encode(this.stringify(value)));
+    Deno.stdout.writeSync(this.encoder.encode(this.stringify(value) + '\n'));
   }
 
   public visitVarStmt(stmt: Var): void {
@@ -183,13 +209,13 @@ export class Interpreter implements ExprVisitor<any>, StmtVistor<void> {
       value = this.evaluate(stmt.initializer);
     }
 
-    this.environment.define(stmt.name.lexeme, value);
+    Interpreter.environment.define(stmt.name.lexeme, value);
   }
 
   public visitAssignExpr(expr: Assign): any {
     const value = this.evaluate(expr.value);
 
-    this.environment.assign(expr.name, value);
+    Interpreter.environment.assign(expr.name, value);
     return value;
   }
 }

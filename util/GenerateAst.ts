@@ -24,6 +24,7 @@ async function main(): Promise<void> {
   ]);
 
   await defineAst(encoder, outputDir, 'Stmt', [
+    'Block      - statements: Stmt[]',
     'Expression - expression: Expr',
     'Print      - expression: Expr',
     'Var        - name: Token, initializer: Expr | null',

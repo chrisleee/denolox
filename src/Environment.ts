@@ -2,19 +2,38 @@ import { RuntimeError } from './RuntimeError.ts';
 import Token from './Token.ts';
 
 export class Environment {
-  private static values: Record<string, any> = {};
+  private values: Record<string, any> = {};
+
+  public enclosing: Environment | null;
+
+  constructor();
+  constructor(enclosing: Environment);
+  constructor(enclosing?: Environment) {
+    if (enclosing != (null || undefined)) {
+      this.enclosing = enclosing;
+    } else {
+      this.enclosing = null;
+    }
+  }
 
   public get(name: Token): any {
-    if (name.lexeme in Environment.values) {
-      return Environment.values[name.lexeme];
+    if (name.lexeme in this.values) {
+      return this.values[name.lexeme];
     }
+
+    if (this.enclosing != null) return this.enclosing.get(name);
 
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
   }
 
   public assign(name: Token, value: any): void {
-    if (name.lexeme in Environment.values) {
-      Environment.values[name.lexeme] = value;
+    if (name.lexeme in this.values) {
+      this.values[name.lexeme] = value;
+      return;
+    }
+
+    if (this.enclosing != null) {
+      this.enclosing.assign(name, value);
       return;
     }
 
@@ -22,6 +41,6 @@ export class Environment {
   }
 
   public define(name: string, value: any): void {
-    Environment.values[name] = value;
+    this.values[name] = value;
   }
 }

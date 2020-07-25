@@ -8,7 +8,7 @@ import {
   Variable,
   Assign,
 } from './Expr.ts';
-import { Stmt, Print, Expression, Var } from './Stmt.ts';
+import { Stmt, Print, Expression, Var, Block } from './Stmt.ts';
 import Token from './Token.ts';
 import { TokenType } from './TokenType.ts';
 
@@ -24,7 +24,8 @@ export class Parser {
   }
 
   public parse(): Stmt[] {
-    const statements = [];
+    const statements: Stmt[] = [];
+
     while (!this.isAtEnd()) {
       const value = this.declaration();
       if (value != null) {
@@ -32,7 +33,7 @@ export class Parser {
       }
     }
 
-    return statements as Stmt[];
+    return statements;
   }
 
   private declaration(): Stmt | null {
@@ -60,6 +61,7 @@ export class Parser {
 
   private statement(): Stmt {
     if (this.match(TokenType.PRINT)) return this.printStatement();
+    if (this.match(TokenType.LEFT_BRACE)) return new Block(this.block());
 
     return this.expressionStatement();
   }
@@ -74,6 +76,20 @@ export class Parser {
     const expr = this.expression();
     this.consume(TokenType.SEMICOLON, "Expect ';' after expression");
     return new Expression(expr);
+  }
+
+  private block(): Stmt[] {
+    const statements: Stmt[] = [];
+
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      const value = this.declaration();
+      if (value != null) {
+        statements.push(value);
+      }
+    }
+
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
   }
 
   // TODO: Refactor all the Binary operations
